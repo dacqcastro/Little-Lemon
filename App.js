@@ -9,7 +9,6 @@ import Onboarding from "./Screens/Onboarding";
 import Profile from "./Screens/Profile";
 import { UserContext } from "./context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { KeyboardAvoidingView, Platform } from "react-native";
 
 const Stack = createNativeStackNavigator();
 
@@ -55,31 +54,23 @@ export default function App() {
       <UserContext.Provider value={{ userInfo, setUserInfo }}>
         <SafeAreaProvider>
           <SafeAreaView style={{ flex: 1 }}>
-            <KeyboardAvoidingView
-              style={{ flex: 1 }}
-              behavior={Platform.OS === "ios" ? "padding" : "height"}
-              keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
-            >
-              <NavigationContainer>
-                <Stack.Navigator
-                  key={
-                    userInfo.isOnboardingComplete
-                      ? "authenticated"
-                      : "onboarding"
-                  }
-                  screenOptions={{ headerShown: false }}
-                >
-                  {userInfo.isOnboardingComplete === true ? (
-                    <>
-                      <Stack.Screen name="Home" component={HomeScreen} />
-                      <Stack.Screen name="Profile" component={Profile} />
-                    </>
-                  ) : (
-                    <Stack.Screen name="Onboarding" component={Onboarding} />
-                  )}
-                </Stack.Navigator>
-              </NavigationContainer>
-            </KeyboardAvoidingView>
+            <NavigationContainer>
+              <Stack.Navigator
+                key={
+                  userInfo.isOnboardingComplete ? "authenticated" : "onboarding"
+                }
+                screenOptions={{ headerShown: false }}
+              >
+                {userInfo.isOnboardingComplete === true ? (
+                  <>
+                    <Stack.Screen name="Home" component={HomeScreen} />
+                    <Stack.Screen name="Profile" component={Profile} />
+                  </>
+                ) : (
+                  <Stack.Screen name="Onboarding" component={Onboarding} />
+                )}
+              </Stack.Navigator>
+            </NavigationContainer>
           </SafeAreaView>
         </SafeAreaProvider>
       </UserContext.Provider>

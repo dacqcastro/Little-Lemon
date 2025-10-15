@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
-import { useContext, useEffect } from "react";
+import { useContext, useEffect, useState } from "react";
 import {
   Image,
   ScrollView,
@@ -14,9 +14,11 @@ import BouncyCheckbox from "react-native-bouncy-checkbox";
 import { MaskedTextInput } from "react-native-mask-text";
 import Navbar from "../Components/navbar";
 import { UserContext } from "../context";
+import { KeyboardAvoidingView, Platform } from "react-native";
 
 export default function Profile() {
   const { userInfo, setUserInfo } = useContext(UserContext);
+  const [showToast, setShowToast] = useState(false);
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -28,7 +30,6 @@ export default function Profile() {
 
     if (!result.canceled) {
       handleChange("profileImage", result.assets[0].uri);
-      console.log(result.assets[0].uri);
     }
   };
 
@@ -39,6 +40,13 @@ export default function Profile() {
     }));
   };
 
+  const showSavedToast = () => {
+    setShowToast(true);
+    setTimeout(() => {
+      setShowToast(false);
+    }, 3000);
+  };
+
   const saveUserData = async () => {
     const userData = {
       ...userInfo,
@@ -46,6 +54,7 @@ export default function Profile() {
 
     try {
       await AsyncStorage.setItem("userData", JSON.stringify(userData));
+      showSavedToast();
       console.log("user data saved");
     } catch (error) {
       console.log(error);
@@ -82,137 +91,153 @@ export default function Profile() {
   }, [userInfo.firstName, userInfo.lastName]);
 
   return (
-    <View style={styles.container}>
-      <Navbar
-        initials={userInfo.initials}
-        profileImage={userInfo.profileImage}
-      />
-      <ScrollView
-        contentContainerStyle={{ paddingHorizontal: 20 }}
-        showsVerticalScrollIndicator={false}
-      >
-        <View>
-          <Text style={styles.subHeaderText}>Personal Information</Text>
-        </View>
-        <View style={styles.inputBlock}>
-          <Text style={styles.labelText}>Avatar</Text>
-          <View style={styles.avatarIcons}>
-            <View style={styles.avatarUserImageContainer}>
-              {userInfo.profileImage ? (
-                <Image
-                  style={styles.userImage}
-                  resizeMode="contain"
-                  source={{ uri: userInfo.profileImage }}
-                />
-              ) : (
-                <View style={styles.userImage}>
-                  <Text style={styles.userImageInitials}>
-                    {userInfo.initials}
-                  </Text>
-                </View>
-              )}
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 64 : -40}
+    >
+      <View style={styles.container}>
+        <Navbar
+          initials={userInfo.initials}
+          profileImage={userInfo.profileImage}
+        />
+        <ScrollView
+          contentContainerStyle={{ paddingHorizontal: 20 }}
+          showsVerticalScrollIndicator={false}
+        >
+          <View>
+            <Text style={styles.subHeaderText}>Personal Information</Text>
+          </View>
+          <View style={styles.inputBlock}>
+            <Text style={styles.labelText}>Avatar</Text>
+            <View style={styles.avatarIcons}>
+              <View style={styles.avatarUserImageContainer}>
+                {userInfo.profileImage ? (
+                  <Image
+                    style={styles.userImage}
+                    resizeMode="contain"
+                    source={{ uri: userInfo.profileImage }}
+                  />
+                ) : (
+                  <View style={styles.userImage}>
+                    <Text style={styles.userImageInitials}>
+                      {userInfo.initials}
+                    </Text>
+                  </View>
+                )}
+              </View>
+              <TouchableOpacity
+                onPress={pickImage}
+                style={styles.avatarChangeBtn}
+              >
+                <Text style={styles.avatarChangeBtnText}>Change</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => {
+                  handleChange("profileImage", "");
+                }}
+                style={styles.avatarRemoveBtn}
+              >
+                <Text style={styles.avatarRemoveBtnText}>Remove</Text>
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity
-              onPress={pickImage}
-              style={styles.avatarChangeBtn}
-            >
-              <Text style={styles.avatarChangeBtnText}>Change</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.avatarRemoveBtn}>
-              <Text style={styles.avatarRemoveBtnText}>Remove</Text>
-            </TouchableOpacity>
           </View>
-        </View>
-        <View style={styles.userInfo}>
-          <View style={styles.inputBlock}>
-            <Text style={styles.labelText}>First Name</Text>
-            <TextInput
-              value={userInfo.firstName}
-              onChangeText={(value) => handleChange("firstName", value)}
-              style={styles.inputField}
+          <View style={styles.userInfo}>
+            <View style={styles.inputBlock}>
+              <Text style={styles.labelText}>First Name</Text>
+              <TextInput
+                value={userInfo.firstName}
+                onChangeText={(value) => handleChange("firstName", value)}
+                style={styles.inputField}
+              />
+            </View>
+            <View style={styles.inputBlock}>
+              <Text style={styles.labelText}>Last Name</Text>
+              <TextInput
+                value={userInfo.lastName}
+                onChangeText={(value) => handleChange("lastName", value)}
+                style={styles.inputField}
+              />
+            </View>
+            <View style={styles.inputBlock}>
+              <Text style={styles.labelText}>Email</Text>
+              <TextInput
+                value={userInfo.email}
+                style={styles.inputField}
+                onChangeText={(value) => handleChange("email", value)}
+                keyboardType="email-address"
+              />
+            </View>
+            <View style={styles.inputBlock}>
+              <Text style={styles.labelText}>Phone Number</Text>
+              <MaskedTextInput
+                value={userInfo.phoneNumber}
+                onChangeText={(value) => handleChange("phoneNumber", value)}
+                mask="(999) 999-9999"
+                style={styles.inputField}
+                keyboardType="phone-pad"
+              />
+            </View>
+          </View>
+          <View>
+            <Text style={styles.subHeaderText}>Email Notifications</Text>
+            <BouncyCheckbox
+              onPress={(value) => handleChange("orderStatus", value)}
+              isChecked={userInfo.orderStatus}
+              innerIconStyle={{ borderWidth: 2 }}
+              textStyle={styles.checkbox}
+              fillColor="#aaaaaaff"
+              text="Order statuses"
+            />
+            <BouncyCheckbox
+              onPress={(value) => handleChange("passwordChanges", value)}
+              isChecked={userInfo.passwordChanges}
+              innerIconStyle={{ borderWidth: 2 }}
+              textStyle={styles.checkbox}
+              fillColor="#aaaaaaff"
+              text="Password changes"
+            />
+            <BouncyCheckbox
+              onPress={(value) => handleChange("specialOffers", value)}
+              isChecked={userInfo.specialOffers}
+              innerIconStyle={{ borderWidth: 2 }}
+              textStyle={styles.checkbox}
+              fillColor="#aaaaaaff"
+              text="Special offers"
+            />
+            <BouncyCheckbox
+              onPress={(value) => handleChange("newsletter", value)}
+              isChecked={userInfo.newsletter}
+              innerIconStyle={{ borderWidth: 2 }}
+              textStyle={styles.checkbox}
+              fillColor="#aaaaaaff"
+              text="Newsletter"
             />
           </View>
-          <View style={styles.inputBlock}>
-            <Text style={styles.labelText}>Last Name</Text>
-            <TextInput
-              value={userInfo.lastName}
-              onChangeText={(value) => handleChange("lastName", value)}
-              style={styles.inputField}
-            />
-          </View>
-          <View style={styles.inputBlock}>
-            <Text style={styles.labelText}>Email</Text>
-            <TextInput
-              value={userInfo.email}
-              style={styles.inputField}
-              onChangeText={(value) => handleChange("email", value)}
-              keyboardType="email-address"
-            />
-          </View>
-          <View style={styles.inputBlock}>
-            <Text style={styles.labelText}>Phone Number</Text>
-            <MaskedTextInput
-              value={userInfo.phoneNumber}
-              onChangeText={(value) => handleChange("phoneNumber", value)}
-              mask="(999) 999-9999"
-              style={styles.inputField}
-              keyboardType="phone-pad"
-            />
-          </View>
-        </View>
-        <View>
-          <Text style={styles.subHeaderText}>Email Notifications</Text>
-          <BouncyCheckbox
-            onPress={(value) => handleChange("orderStatus", value)}
-            isChecked={userInfo.orderStatus}
-            innerIconStyle={{ borderWidth: 2 }}
-            textStyle={styles.checkbox}
-            fillColor="#aaaaaaff"
-            text="Order statuses"
-          />
-          <BouncyCheckbox
-            onPress={(value) => handleChange("passwordChanges", value)}
-            isChecked={userInfo.passwordChanges}
-            innerIconStyle={{ borderWidth: 2 }}
-            textStyle={styles.checkbox}
-            fillColor="#aaaaaaff"
-            text="Password changes"
-          />
-          <BouncyCheckbox
-            onPress={(value) => handleChange("specialOffers", value)}
-            isChecked={userInfo.specialOffers}
-            innerIconStyle={{ borderWidth: 2 }}
-            textStyle={styles.checkbox}
-            fillColor="#aaaaaaff"
-            text="Special offers"
-          />
-          <BouncyCheckbox
-            onPress={(value) => handleChange("newsletter", value)}
-            isChecked={userInfo.newsletter}
-            innerIconStyle={{ borderWidth: 2 }}
-            textStyle={styles.checkbox}
-            fillColor="#aaaaaaff"
-            text="Newsletter"
-          />
-        </View>
-        <View style={styles.buttons}>
-          <TouchableOpacity onPress={logoutUser} style={styles.logoutBtn}>
-            <Text style={styles.logoutBtnText}>Log out</Text>
-          </TouchableOpacity>
-          <View style={styles.innerBtns}>
-            <TouchableOpacity style={styles.avatarRemoveBtn}>
-              <Text style={styles.avatarRemoveBtnText}>Discard changes</Text>
+          <View style={styles.buttons}>
+            <TouchableOpacity onPress={logoutUser} style={styles.logoutBtn}>
+              <Text style={styles.logoutBtnText}>Log out</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.avatarChangeBtn}
-              onPress={saveUserData}
-            >
-              <Text style={styles.avatarChangeBtnText}>Save changes</Text>
-            </TouchableOpacity>
+            <View style={styles.innerBtns}>
+              <TouchableOpacity style={styles.avatarRemoveBtn}>
+                <Text style={styles.avatarRemoveBtnText}>Discard changes</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.avatarChangeBtn}
+                onPress={saveUserData}
+              >
+                <Text style={styles.avatarChangeBtnText}>Save changes</Text>
+              </TouchableOpacity>
+            </View>
+            {showToast && (
+              <View style={styles.toast}>
+                <Text style={styles.toastText}>Settings saved!</Text>
+              </View>
+            )}
           </View>
-        </View>
-      </ScrollView>
-    </View>
+        </ScrollView>
+      </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -312,5 +337,20 @@ const styles = StyleSheet.create({
   innerBtns: {
     flexDirection: "row",
     justifyContent: "space-around",
+  },
+  toast: {
+    position: "absolute",
+    top: 0,
+    left: 20,
+    right: 20,
+    backgroundColor: "#c5c5c5ff",
+    padding: 15,
+    borderRadius: 5,
+    zIndex: 1000,
+  },
+  toastText: {
+    color: "white",
+    textAlign: "center",
+    fontWeight: "bold",
   },
 });

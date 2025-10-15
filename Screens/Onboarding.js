@@ -9,12 +9,15 @@ import {
   View,
 } from "react-native";
 import { UserContext } from "../context";
+import { KeyboardAvoidingView, Platform } from "react-native";
 
 export default function Onboarding() {
   const { userInfo, setUserInfo } = useContext(UserContext);
   const [buttonDisabled, setButtonDisabled] = useState(true);
   const [email, setEmail] = useState("");
   const [firstName, setFirstName] = useState("");
+  const [showFirstNameError, setShowFirstNameError] = useState(false);
+  const [showEmailError, setShowEmailError] = useState(false);
 
   const getInitials = (name) => {
     const trimmed = (name || "").trim();
@@ -36,7 +39,20 @@ export default function Onboarding() {
     const isEmailValid = validateEmail(email);
     const isFormValid =
       isNameValid && isEmailValid && firstName.length > 0 && email.length > 0;
+
     setButtonDisabled(!isFormValid);
+
+    if (isEmailValid === false && email.length > 0) {
+      setShowEmailError(true);
+    } else {
+      setShowEmailError(false);
+    }
+
+    if (isNameValid === false && firstName.length > 0) {
+      setShowFirstNameError(true);
+    } else {
+      setShowFirstNameError(false);
+    }
   };
 
   const handleEmailChange = (text) => {
@@ -76,44 +92,58 @@ export default function Onboarding() {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.logo}>
-        <Image
-          style={styles.logoImage}
-          resizeMode="contain"
-          source={require("../assets/logo.jpg")}
-        />
-      </View>
-      <View style={styles.contentContainer}>
-        <Text style={styles.contentSubHeader}>Let us get to know you</Text>
-        <View style={styles.contentItem}>
-          <Text style={styles.inputText}>First Name</Text>
-          <TextInput
-            value={firstName}
-            onChangeText={handleFirstName}
-            style={styles.inputField}
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 64 : -40}
+    >
+      <View style={styles.container}>
+        <View style={styles.logo}>
+          <Image
+            style={styles.logoImage}
+            resizeMode="contain"
+            source={require("../assets/logo.jpg")}
           />
         </View>
-        <View style={styles.contentItem}>
-          <Text style={styles.inputText}>Email</Text>
-          <TextInput
-            keyboardType="email-address"
-            value={email}
-            onChangeText={handleEmailChange}
-            style={styles.inputField}
-          />
+        <View style={styles.contentContainer}>
+          <Text style={styles.contentSubHeader}>Let us get to know you</Text>
+          <View style={styles.contentItem}>
+            <Text style={styles.inputText}>First Name</Text>
+            <TextInput
+              value={firstName}
+              onChangeText={handleFirstName}
+              style={styles.inputField}
+            />
+            <Text
+              style={[showFirstNameError ? styles.inputError : { opacity: 0 }]}
+            >
+              first name is invalid!
+            </Text>
+          </View>
+          <View style={styles.contentItem}>
+            <Text style={styles.inputText}>Email</Text>
+            <TextInput
+              keyboardType="email-address"
+              value={email}
+              onChangeText={handleEmailChange}
+              style={styles.inputField}
+            />
+            <Text style={[showEmailError ? styles.inputError : { opacity: 0 }]}>
+              Enter a valid email!
+            </Text>
+          </View>
+        </View>
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity
+            style={[styles.button, buttonDisabled && styles.buttonDisabled]}
+            disabled={buttonDisabled}
+            onPress={saveUserData}
+          >
+            <Text style={styles.buttonText}>Next</Text>
+          </TouchableOpacity>
         </View>
       </View>
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity
-          style={[styles.button, buttonDisabled && styles.buttonDisabled]}
-          disabled={buttonDisabled}
-          onPress={saveUserData}
-        >
-          <Text style={styles.buttonText}>Next</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -147,6 +177,9 @@ const styles = StyleSheet.create({
     fontWeight: "400",
     color: "#4b4b4bff",
   },
+  inputError: {
+    color: "red",
+  },
   inputText: {
     fontSize: 24,
     fontWeight: "500",
@@ -158,6 +191,7 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderRadius: 10,
     width: "100%",
+    paddingLeft: 10,
   },
   buttonContainer: {
     height: "25%",
